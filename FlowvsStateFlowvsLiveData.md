@@ -1,6 +1,6 @@
 # 🧠 Résumé pratique : Flow vs StateFlow vs LiveData vs stateIn
 
-## 📍 Objectif
+##  Objectif
 
 Comprendre rapidement les différences et usages de :
 - `Flow`
@@ -82,6 +82,47 @@ val students: LiveData<List<Student>> = flow.asLiveData()
 ### ❌ Limites :
 - Moins flexible que `Flow`
 - Pas optimal avec Compose
+
+---
+
+## 📘 Exemple complet
+
+### 🧩 Repository.kt
+
+```kotlin
+class StudentRepository(private val studentDao: StudentDao) {
+    fun getAllStudents(): Flow<List<Student>> = studentDao.getAllStudents()
+}
+```
+
+### 🎯 ViewModel.kt
+
+```kotlin
+class StudentViewModel(private val repository: StudentRepository) : ViewModel() {
+
+    val allStudents: StateFlow<List<Student>> = repository.getAllStudents()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+}
+```
+
+### 🖼️ UI - Compose
+
+```kotlin
+@Composable
+fun StudentListScreen(viewModel: StudentViewModel) {
+    val students by viewModel.allStudents.collectAsState()
+
+    LazyColumn {
+        items(students) { student ->
+            Text("${student.id} - ${student.name} ${student.lastName} - Mark: ${student.mark}")
+        }
+    }
+}
+```
 
 ---
 
